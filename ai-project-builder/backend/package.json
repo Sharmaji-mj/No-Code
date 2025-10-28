@@ -1,0 +1,44 @@
+{
+  "name": "ai-project-builder-backend",
+  "version": "1.0.0",
+  "description": "Backend for AI Project Builder",
+  "main": "src/index.js",
+  "scripts": {
+    "deploy:aws": "node deploy/aws.js",
+    "dev": "nodemon",
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-ec2": "^3.917.0",
+    "@aws-sdk/client-lambda": "^3.917.0",
+    "@aws-sdk/client-s3": "^3.917.0",
+    "archiver": "^7.0.1",
+    "axios": "^1.12.2",
+    "bcrypt": "^6.0.0",
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^12.4.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2",
+    "express-rate-limit": "^8.1.0",
+    "fs-extra": "^11.3.2",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "lucide-react": "^0.547.0",
+    "mime-types": "^3.0.1",
+    "mongoose": "^8.19.1",
+    "morgan": "^1.10.1",
+    "multer": "^1.4.5-lts.1",
+    "openai": "^4.104.0",
+    "pg": "^8.16.3",
+    "pg-hstore": "^2.3.4",
+    "react-icons": "^5.5.0",
+    "sequelize": "^6.37.7",
+    "simple-git": "^3.28.0",
+    "socket.io": "^4.7.4",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}

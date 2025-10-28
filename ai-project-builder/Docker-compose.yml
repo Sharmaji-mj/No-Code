@@ -1,0 +1,97 @@
+# Compose "version" is obsolete; remove to avoid warnings.
+services:
+  frontend:
+    # mem_limit may be ignored by some Compose engines; still safe to keep
+    mem_limit: 4g
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: codealchemy_frontend
+    working_dir: /app
+    command: >
+      sh -c "
+        if [ ! -d node_modules ] || [ ! -f node_modules/.installed ]; then
+          echo '>> installing frontend deps inside container...' &&
+          npm ci || npm install &&
+          mkdir -p node_modules && touch node_modules/.installed;
+        fi &&
+        PORT=3001 npm start
+      "
+    environment:
+      # ✅ point to backend's /api (backend is published as host:5001 -> container:5000)
+      - REACT_APP_API_URL=http://localhost:5001/api
+
+      # 🔧 dev stability in Docker
+      - NODE_ENV=development
+      - NODE_OPTIONS=--max_old_space_size=4096
+      - DISABLE_ESLINT_PLUGIN=true
+      - FAST_REFRESH=false
+      - GENERATE_SOURCEMAP=false
+
+      # 🔭 file-watch polling to avoid ENOMEM/inotify exhaustion
+      - CHOKIDAR_USEPOLLING=true
+      - CHOKIDAR_INTERVAL=1500
+      - WATCHPACK_POLLING=true
+      - WATCHPACK_POLLING_INTERVAL=1500
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./frontend:/app              # your source
+      - /app/node_modules            # keep node_modules inside container
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: codealchemy_backend
+    working_dir: /app
+    command: >
+      sh -c "
+        if [ ! -d node_modules ] || [ ! -f node_modules/.installed ]; then
+          echo '>> installing backend deps inside container...' &&
+          npm ci || npm install &&
+          mkdir -p node_modules && touch node_modules/.installed;
+        fi &&
+        npm run dev
+      "
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://postgres:mj_postgre@db:5432/codeAlchemy
+      - OPENAI_MODEL=gpt-4o-mini
+      - CORS_ORIGINS=http://localhost:3001
+    ports:
+      - "5001:5001"   # host:container
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      db:
+        # This 'condition' is supported in Docker Compose v2 plugin.
+        # If your engine complains, replace with a wait-for-db script in the backend.
+        condition: service_healthy
+
+  db:
+    image: postgres:15
+    container_name: codealchemy_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mj_postgre
+      POSTGRES_DB: codeAlchemy
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d codeAlchemy"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:
+

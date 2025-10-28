@@ -1,0 +1,648 @@
+# ===== .github/workflows/ci.yml =====
+
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  backend-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+    
+    - name: Install backend dependencies
+      working-directory: ./backend
+      run: npm ci
+    
+    - name: Run backend tests
+      working-directory: ./backend
+      run: npm test
+      env:
+        NODE_ENV: test
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+    
+    - name: Check code style
+      working-directory: ./backend
+      run: npm run lint || true
+
+  frontend-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+    
+    - name: Install frontend dependencies
+      working-directory: ./frontend
+      run: npm ci
+    
+    - name: Run frontend tests
+      working-directory: ./frontend
+      run: npm test -- --watchAll=false
+    
+    - name: Build frontend
+      working-directory: ./frontend
+      run: npm run build
+      env:
+        REACT_APP_API_URL: ${{ secrets.REACT_APP_API_URL }}
+
+  integration-test:
+    runs-on: ubuntu-latest
+    needs: [backend-test, frontend-test]
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+    
+    - name: Install dependencies
+      run: |
+        cd backend && npm ci
+        cd ../tests && npm install
+    
+    - name: Start backend
+      working-directory: ./backend
+      run: npm start &
+      env:
+        NODE_ENV: test
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        PORT: 5000
+    
+    - name: Wait for backend
+      run: npx wait-on http://localhost:5000/health
+    
+    - name: Run integration tests
+      working-directory: ./tests
+      run: node smoke-test.js
+
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: [integration-test]
+    if: github.ref == 'refs/heads/develop'
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Deploy to staging
+      run: echo "Deploy to staging server"
+      # Add your deployment commands here
+
+  deploy-production:
+    runs-on: ubuntu-latest
+    needs: [integration-test]
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Deploy to production
+      run: echo "Deploy to production server"
+      # Add your deployment commands here
+
+
+# ===== backend/scripts/deploy.sh =====
+
+#!/bin/bash
+
+# Deployment script for production
+set -e
+
+echo "🚀 Starting deployment..."
+
+# Colors
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
+# Configuration
+DEPLOY_USER=${DEPLOY_USER:-"ubuntu"}
+DEPLOY_HOST=${DEPLOY_HOST:-"your-server.com"}
+DEPLOY_PATH=${DEPLOY_PATH:-"/var/www/codegen-platform"}
+PM2_APP_NAME="codegen-backend"
+
+echo "📦 Building application..."
+
+# Build frontend
+cd frontend
+npm install
+npm run build
+cd ..
+
+# Build backend (if needed)
+cd backend
+npm install --production
+cd ..
+
+echo "✅ Build complete"
+
+echo "📤 Deploying to server..."
+
+# Create deployment package
+tar -czf deploy.tar.gz \
+  backend/ \
+  frontend/build/ \
+  package.json \
+  --exclude=backend/node_modules \
+  --exclude=backend/generated \
+  --exclude=backend/logs
+
+# Copy to server
+scp deploy.tar.gz $DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/
+
+# Execute remote commands
+ssh $DEPLOY_USER@$DEPLOY_HOST << 'ENDSSH'
+cd /var/www/codegen-platform
+
+# Extract
+tar -xzf deploy.tar.gz
+rm deploy.tar.gz
+
+# Install dependencies
+cd backend
+npm install --production
+
+# Restart with PM2
+pm2 restart codegen-backend || pm2 start src/server.js --name codegen-backend
+
+# Cleanup
+pm2 save
+
+echo "✅ Deployment complete"
+ENDSSH
+
+# Cleanup
+rm deploy.tar.gz
+
+echo -e "${GREEN}✅ Deployment successful!${NC}"
+echo "🌐 Application is now live at http://$DEPLOY_HOST"
+
+
+# ===== backend/ecosystem.config.js =====
+
+// PM2 configuration for production
+module.exports = {
+  apps: [{
+    name: 'codegen-backend',
+    script: './src/server.js',
+    instances: 2,
+    exec_mode: 'cluster',
+    watch: false,
+    max_memory_restart: '1G',
+    env: {
+      NODE_ENV: 'production',
+      PORT: 5000
+    },
+    env_development: {
+      NODE_ENV: 'development',
+      PORT: 5000
+    },
+    error_file: './logs/pm2-error.log',
+    out_file: './logs/pm2-out.log',
+    log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+    merge_logs: true,
+    autorestart: true,
+    max_restarts: 10,
+    min_uptime: '10s',
+    listen_timeout: 3000,
+    kill_timeout: 5000
+  }]
+};
+
+
+# ===== docker-compose.prod.yml =====
+
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./frontend/build:/usr/share/nginx/html:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - backend
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION}
+      - DATABASE_URL=${DATABASE_URL}
+    volumes:
+      - generated-data:/app/generated
+      - logs-data:/app/logs
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - app-network
+    restart: unless-stopped
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=codegen
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    restart: unless-stopped
+
+volumes:
+  generated-data:
+  logs-data:
+  redis-data:
+  postgres-data:
+
+networks:
+  app-network:
+    driver: bridge
+
+
+# ===== nginx.conf =====
+
+user nginx;
+worker_processes auto;
+error_log /var/log/nginx/error.log warn;
+pid /var/run/nginx.pid;
+
+events {
+    worker_connections 1024;
+}
+
+http {
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+
+    log_format main '$remote_addr - $remote_user [$time_local] "$request" '
+                    '$status $body_bytes_sent "$http_referer" '
+                    '"$http_user_agent" "$http_x_forwarded_for"';
+
+    access_log /var/log/nginx/access.log main;
+
+    sendfile on;
+    tcp_nopush on;
+    tcp_nodelay on;
+    keepalive_timeout 65;
+    types_hash_max_size 2048;
+    client_max_body_size 100M;
+
+    # Gzip compression
+    gzip on;
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_comp_level 6;
+    gzip_types text/plain text/css text/xml text/javascript 
+               application/json application/javascript application/xml+rss;
+
+    # Rate limiting
+    limit_req_zone $binary_remote_addr zone=api_limit:10m rate=10r/s;
+    limit_req_zone $binary_remote_addr zone=general_limit:10m rate=100r/m;
+
+    # Upstream backend
+    upstream backend {
+        least_conn;
+        server backend:5000 max_fails=3 fail_timeout=30s;
+    }
+
+    # HTTP to HTTPS redirect
+    server {
+        listen 80;
+        server_name yourdomain.com www.yourdomain.com;
+        return 301 https://$server_name$request_uri;
+    }
+
+    # HTTPS server
+    server {
+        listen 443 ssl http2;
+        server_name yourdomain.com www.yourdomain.com;
+
+        # SSL configuration
+        ssl_certificate /etc/nginx/ssl/cert.pem;
+        ssl_certificate_key /etc/nginx/ssl/key.pem;
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_ciphers HIGH:!aNULL:!MD5;
+        ssl_prefer_server_ciphers on;
+
+        # Security headers
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-XSS-Protection "1; mode=block" always;
+        add_header Referrer-Policy "no-referrer-when-downgrade" always;
+        add_header Content-Security-Policy "default-src 'self' http: https: data: blob: 'unsafe-inline'" always;
+
+        # Frontend - React app
+        location / {
+            root /usr/share/nginx/html;
+            index index.html;
+            try_files $uri $uri/ /index.html;
+            
+            # Cache static assets
+            location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+                expires 1y;
+                add_header Cache-Control "public, immutable";
+            }
+        }
+
+        # Backend API
+        location /api/ {
+            limit_req zone=api_limit burst=20 nodelay;
+            
+            proxy_pass http://backend;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection 'upgrade';
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_cache_bypass $http_upgrade;
+            
+            # Timeouts for long-running requests
+            proxy_connect_timeout 300s;
+            proxy_send_timeout 300s;
+            proxy_read_timeout 300s;
+        }
+
+        # Health check endpoint
+        location /health {
+            proxy_pass http://backend/health;
+            access_log off;
+        }
+    }
+}
+
+
+# ===== backend/scripts/health-check.sh =====
+
+#!/bin/bash
+
+# Health check script for monitoring
+API_URL=${API_URL:-"http://localhost:5000"}
+
+echo "🏥 Running health checks..."
+
+# Check if server is responding
+HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" $API_URL/health)
+
+if [ $HTTP_CODE -eq 200 ]; then
+    echo "✅ Server is healthy (HTTP $HTTP_CODE)"
+    exit 0
+else
+    echo "❌ Server is unhealthy (HTTP $HTTP_CODE)"
+    
+    # Send alert (example with Slack webhook)
+    if [ -n "$SLACK_WEBHOOK" ]; then
+        curl -X POST $SLACK_WEBHOOK \
+            -H 'Content-Type: application/json' \
+            -d "{\"text\":\"🚨 Backend health check failed: HTTP $HTTP_CODE\"}"
+    fi
+    
+    exit 1
+fi
+
+
+# ===== backend/scripts/backup.sh =====
+
+#!/bin/bash
+
+# Backup script for generated projects and logs
+set -e
+
+BACKUP_DIR=${BACKUP_DIR:-"/backups"}
+GENERATED_DIR=${GENERATED_DIR:-"./generated"}
+LOGS_DIR=${LOGS_DIR:-"./logs"}
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+
+echo "📦 Creating backup..."
+
+# Create backup directory
+mkdir -p $BACKUP_DIR
+
+# Backup generated projects
+if [ -d "$GENERATED_DIR" ]; then
+    tar -czf "$BACKUP_DIR/generated_$TIMESTAMP.tar.gz" $GENERATED_DIR
+    echo "✅ Backed up generated projects"
+fi
+
+# Backup logs
+if [ -d "$LOGS_DIR" ]; then
+    tar -czf "$BACKUP_DIR/logs_$TIMESTAMP.tar.gz" $LOGS_DIR
+    echo "✅ Backed up logs"
+fi
+
+# Backup database (if using one)
+if [ -n "$DATABASE_URL" ]; then
+    pg_dump $DATABASE_URL > "$BACKUP_DIR/database_$TIMESTAMP.sql"
+    gzip "$BACKUP_DIR/database_$TIMESTAMP.sql"
+    echo "✅ Backed up database"
+fi
+
+# Remove backups older than 7 days
+find $BACKUP_DIR -name "*.tar.gz" -mtime +7 -delete
+find $BACKUP_DIR -name "*.sql.gz" -mtime +7 -delete
+
+echo "✅ Backup complete: $BACKUP_DIR"
+
+
+# ===== kubernetes/deployment.yaml =====
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: codegen-backend
+  labels:
+    app: codegen-backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: codegen-backend
+  template:
+    metadata:
+      labels:
+        app: codegen-backend
+    spec:
+      containers:
+      - name: backend
+        image: codegen-backend:latest
+        ports:
+        - containerPort: 5000
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "5000"
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: codegen-secrets
+              key: openai-api-key
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        volumeMounts:
+        - name: generated-storage
+          mountPath: /app/generated
+      volumes:
+      - name: generated-storage
+        persistentVolumeClaim:
+          claimName: generated-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: codegen-backend-service
+spec:
+  selector:
+    app: codegen-backend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5000
+  type: LoadBalancer
+
+
+# ===== kubernetes/secrets.yaml =====
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: codegen-secrets
+type: Opaque
+stringData:
+  openai-api-key: "your-openai-api-key-here"
+  aws-access-key: "your-aws-access-key"
+  aws-secret-key: "your-aws-secret-key"
+
+
+# ===== Makefile =====
+
+.PHONY: help install dev build test deploy clean
+
+help:
+	@echo "Available commands:"
+	@echo "  make install    - Install all dependencies"
+	@echo "  make dev        - Run development servers"
+	@echo "  make build      - Build for production"
+	@echo "  make test       - Run all tests"
+	@echo "  make deploy     - Deploy to production"
+	@echo "  make clean      - Clean generated files"
+
+install:
+	@echo "📦 Installing dependencies..."
+	cd backend && npm install
+	cd frontend && npm install
+	cd tests && npm install
+
+dev:
+	@echo "🚀 Starting development servers..."
+	@trap 'kill 0' INT; \
+	cd backend && npm run dev & \
+	cd frontend && npm start & \
+	wait
+
+build:
+	@echo "🏗️  Building for production..."
+	cd frontend && npm run build
+	cd backend && npm install --production
+
+test:
+	@echo "🧪 Running tests..."
+	cd backend && npm test
+	cd frontend && npm test -- --watchAll=false
+	cd tests && node smoke-test.js
+
+deploy:
+	@echo "🚀 Deploying to production..."
+	./backend/scripts/deploy.sh
+
+clean:
+	@echo "🧹 Cleaning..."
+	rm -rf backend/node_modules frontend/node_modules
+	rm -rf backend/generated/* backend/logs/*
+	rm -rf frontend/build
+
+docker-build:
+	@echo "🐳 Building Docker images..."
+	docker-compose build
+
+docker-up:
+	@echo "🐳 Starting Docker containers..."
+	docker-compose up -d
+
+docker-down:
+	@echo "🐳 Stopping Docker containers..."
+	docker-compose down
+
+docker-logs:
+	@echo "📋 Showing Docker logs..."
+	docker-compose logs -f

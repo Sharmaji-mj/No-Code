@@ -1,0 +1,7 @@
+{
+  "watch": ["src"],
+  "ignore": ["node_modules", "logs"],
+  "ext": "js,json",
+  "exec": "node index.js",
+  "verbose": true
+}
