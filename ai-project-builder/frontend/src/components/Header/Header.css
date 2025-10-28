@@ -1,0 +1,259 @@
+/* .mejuvante-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: linear-gradient(135deg, #1e3c61 0%, #61c4ca 100%);
+  color: white;
+  z-index: 1000;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.mejuvante-header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  height: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 24px;
+}
+
+.mejuvante-logo {
+  display: flex;
+  align-items: center;
+  font-family: 'Segoe UI', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Segoe UI Historic', sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+}
+
+.mejuvante-logo-icon {
+  font-size: 24px;
+  margin-right: 12px;
+  color: #61c4ca;
+}
+
+.mejuvante-text {
+  font-size: 18px;
+  font-weight: 700;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.mejuvante-nav {
+  display: flex;
+  gap: 16px;
+}
+
+.mejuvante-user-button {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: 'Segoe UI', 'Segoe UI', 'Segoe UI Emoji', 'Segoe UI Historic', sans-serif;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.mejuvante-user-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.mejuvante-user-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #61c4ca, #2c99b7);
+  display: flex;
+  align-items: center;
+  font-weight: bold;
+  font-size: 12px;
+  color: white;
+}
+
+.mejuvante-name {
+  color: white;
+  font-weight: 500;
+  margin: 0 8px;
+}
+
+.mejuvante-dropdown-arrow {
+  font-size: 10px;
+  transition: transform 0.2s;
+}
+
+.mejuvante-user-menu:hover .mejuvante-dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+.mejuvante-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 6px;
+  min-width: 200px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.mejuvante-user-info {
+  padding: 12px 16px;
+  border-bottom: 1px solid #444;
+}
+
+.mejuvante-user-email {
+  margin: 0;
+  font-size: 12px;
+  color: #ccc;
+}
+
+.mejuvante-logout-btn {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.mejuvante-logout-btn:hover {
+  background: #c82333;
+}
+
+.mejuvante-auth-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.mejuvante-login-btn, .mejuvante-register-btn {
+  background: transparent;
+  border: 1px solid #555;
+  color: white;
+  padding: 6px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.mejuvante-login-btn:hover, .mejuvante-register-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.mejuvante-register-btn {
+  background: #2c99b7;
+  border-color: #2c99b7;
+}
+
+.mejuvante-login-btn:hover {
+  background: #25a25a;
+} */
+
+
+/* frontend/src/components/Header/Header.css */
+.header {
+  background-color: #1e3c61;
+  color: white;
+  padding: 0;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  height: 60px;
+}
+
+.logo {
+  text-decoration: none;
+  color: white;
+}
+
+.logo h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.nav-menu {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.nav-link {
+  color: white;
+  text-decoration: none;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+.nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.user-menu {
+  position: relative;
+}
+
+.user-button {
+  background: none;
+  border: none;
+  color: white;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.user-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.user-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: white;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 150px;
+  z-index: 10;
+  overflow: hidden;
+}
+
+.user-dropdown button {
+  display: block;
+  width: 100%;
+  padding: 10px 15px;
+  background: none;
+  border: none;
+  text-align: left;
+  color: #333;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.user-dropdown button:hover {
+  background-color: #f5f5f5;
+}

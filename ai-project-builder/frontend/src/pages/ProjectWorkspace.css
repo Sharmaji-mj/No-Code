@@ -1,0 +1,24 @@
+/* frontend/src/pages/ProjectWorkspace.css */
+.sidebar-toggle-button {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 999;
+  background: var(--primary-color, #007bff); /* Fallback color */
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  box-shadow: var(--shadow, 0 2px 4px rgba(0, 0, 0, 0.1)); /* Fallback shadow */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s ease;
+}
+
+.sidebar-toggle-button:hover {
+  opacity: 0.9;
+}

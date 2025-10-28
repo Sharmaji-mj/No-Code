@@ -1,0 +1,107 @@
+/* 
+.project-card {
+  background-color: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  height: 200px;
+}
+
+.project-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.12);
+  border-color: #2c99b7;
+}
+
+.project-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.project-title {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #1e3c61;
+  font-weight: 600;
+  flex: 1;
+  margin-right: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-status {
+  color: white;
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.project-description {
+  flex: 1;
+  margin: 0 0 15px 0;
+  color: #666;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  overflow: hidden;
+
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+
+.project-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.project-type {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.type-icon {
+  font-size: 1rem;
+}
+
+.type-label {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.project-date {
+  font-size: 0.8rem;
+  color: #999;
+}
+
+
+.chat-history-preview {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.chat-count {
+  font-size: 0.75rem;
+  color: var(--secondary-text);
+  background-color: var(--hover-color);
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  display: inline-block;
+} */

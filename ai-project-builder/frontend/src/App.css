@@ -1,0 +1,163 @@
+
+
+/* frontend/src/App.css */
+.App {
+  text-align: center;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: #333;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+a {
+  color: #2c99b7;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+button {
+  cursor: pointer;
+}
+
+input, textarea {
+  font-family: inherit;
+}
+/* Add to your index.css or App.css */
+.chat-interface {
+  display: flex;
+  flex-direction: column;
+  height: 80vh;
+  border: 1px solid var(--border-color, #ccc);
+  border-radius: 8px;
+  padding: 1rem;
+  background: var(--card-bg, #f9f9f9);
+}
+
+.chat-messages {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.message {
+  margin-bottom: 1rem;
+  display: flex;
+}
+
+.message.user {
+  justify-content: flex-end;
+}
+
+.message.assistant {
+  justify-content: flex-start;
+}
+
+.message-content {
+  max-width: 70%;
+  padding: 0.75rem;
+  border-radius: 15px;
+  background: #61c4ca;
+  color: white;
+  white-space: pre-wrap;
+}
+.message.user .message-content {
+  background: var(--card-bg, #e9ecef);
+  color: var(--text-color, black);
+}
+
+.typing-indicator {
+  font-style: italic;
+  color: #888;
+}
+
+.chat-input {
+  display: flex;
+}
+
+.chat-input input {
+  flex-grow: 1;
+  border: 1px solid var(--border-color, #ccc);
+  border-radius: 20px;
+  padding: 0.75rem;
+  margin-right: 0.5rem;
+}
+
+.chat-input button {
+  border: none;
+  background: #61c4ca;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 20px;
+  cursor: pointer;
+}
+.message-content {
+  background: #61c4ca;
+  color: white;
+  white-space: pre-wrap;
+}
+/* src/index.css or src/App.css */
+
+:root {
+  /* Light Theme (Default) */
+  --bg-color: #f4f7f6;
+  --secondary-bg-color: #ffffff;
+  --text-color: #333333;
+  --secondary-text-color: #666666;
+  --border-color: #e1e4e8;
+  --primary-color: #61c4ca;
+  --hover-bg-color: #f0f0f0;
+  --shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+body.dark {
+  /* Dark Theme */
+  --bg-color: #1a1a1b;
+  --secondary-bg-color: #2d2d2d;
+  --text-color: #d4d4d4;
+  --secondary-text-color: #b3b3b3;
+  --border-color: #404040;
+  --primary-color: #61c4ca;
+  --hover-bg-color: #3a3a3a;
+  --shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Apply these variables to your base elements */
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  transition: background-color 0.3s ease, color 0.3s ease;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+}
+
+/* Now you can use these variables in any component */
+.card {
+  background-color: var(--secondary-bg-color);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow);
+}
